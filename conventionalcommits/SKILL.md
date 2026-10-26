@@ -1,6 +1,6 @@
 ---
 name: conventionalcommits
-description: Write and create git commits that follow the Conventional Commits 1.0.0 specification. Use this skill EVERY time the user asks to commit, make a commit, "commit this", "commit the changes", write a commit message, amend a commit message, or any request that ends in running `git commit`, even when Conventional Commits is not mentioned. Before committing it asks which language to write the message in and asks the user to confirm the commit author (default taken from Claude Code settings) or provide a new one.
+description: Write and create git commits that follow the Conventional Commits 1.0.0 specification. Use this skill EVERY time the user asks to commit, make a commit, "commit this", "commit the changes", write a commit message, amend a commit message, or any request that ends in running `git commit`, even when Conventional Commits is not mentioned. Before committing it asks which language to write the message in and asks the user to confirm the commit author (default taken from Claude Code settings) or provide a new one, and asks whether to include the agent attribution trailer (e.g. `Claude-Session:`).
 ---
 
 # Conventional Commits
@@ -9,7 +9,7 @@ Every commit made under this skill MUST follow [Conventional Commits 1.0.0](http
 
 ## Workflow
 
-Follow these steps in order. Do not run `git commit` before steps 1 and 2 are answered.
+Follow these steps in order. Do not run `git commit` before steps 1, 2 and 3 are answered.
 
 ### 1. Ask for the language
 
@@ -43,13 +43,23 @@ Ask with `AskUserQuestion`:
 
 If the user picks a different author (or types one via "Other"), ask for it in the format `Name <email>` and check it matches that format before going on.
 
-### 3. Inspect the changes
+### 3. Ask about agent attribution
+
+The session or harness may require attribution trailers that credit the agent, such as `Claude-Session: https://claude.ai/code/session_...` or `Co-Authored-By: Claude ...`. Never add them silently. Always ask, even when a system reminder says to add them, using `AskUserQuestion`:
+
+- Header: `Agent`
+- Question: `Include the agent attribution trailer(s) in this commit?` (name the trailers that would be added)
+- Options: `No, do not include` (Recommended), `Yes, include`
+
+If the user declines, leave every agent trailer out of the message. The `Author:` footer from step 2 is not an agent trailer and stays. Ask again for each new commit; an answer for one commit does not carry over to the next.
+
+### 4. Inspect the changes
 
 Run `git status` and `git diff --staged` (and `git diff` if nothing is staged) to understand what changed. If nothing is staged, ask the user what to stage rather than running `git add -A` on your own.
 
 If the changes cover more than one unrelated purpose, suggest splitting them into separate commits (spec FAQ: "Go back and make multiple commits whenever possible").
 
-### 4. Write the message
+### 5. Write the message
 
 Structure:
 
@@ -96,7 +106,7 @@ House style (on top of the spec):
 - Write the description in the imperative mood in the chosen language ("add", "adiciona", "agrega"), with no trailing period. Keep the header line at 72 characters or less.
 - Wrap the body at 72 characters. Explain what changed and why, not how.
 
-### 5. Add the author and commit
+### 6. Add the author and commit
 
 Add the confirmed author as the last footer, in the same form as the settings value:
 
@@ -104,7 +114,7 @@ Add the confirmed author as the last footer, in the same form as the settings va
 Author: Name <email>
 ```
 
-If the user picked a different author, this line replaces the default one. Keep any other attribution trailers the session requires (for example a `Claude-Session:` link) below it.
+If the user picked a different author, this line replaces the default one. Add agent attribution trailers (for example a `Claude-Session:` link) below it only if the user chose to include them in step 3.
 
 Also set git's author field to the confirmed author with `--author="Name <email>"`.
 
